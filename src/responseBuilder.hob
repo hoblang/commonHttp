@@ -1,4 +1,5 @@
 import list;
+import mem;
 import "response.hob" as response;
 import "common.hob" as common;
 
@@ -11,14 +12,14 @@ public type RequestBuilder = struct {
     headers: List.<Header>,
 };
 
-public fun new(code: StatusCode) -> RequestBuilder {
-    return {
+public fun new(code: StatusCode) -> *RequestBuilder {
+    return mem.allocateWith.<RequestBuilder>({
         statusCode: code,
         headers: list.new.<Header>(),
-    };
+    });
 }
 
-public fun RequestBuilder.header(self, key: string, value: string) -> RequestBuilder {
+public fun RequestBuilder.header(&self, key: string, value: string) -> *RequestBuilder {
     self.headers.push({
         name: key,
         value: value,
@@ -27,6 +28,7 @@ public fun RequestBuilder.header(self, key: string, value: string) -> RequestBui
 }
 
 public fun RequestBuilder.build(&self) -> Response {
+    defer mem.free(self);
     return {
         protocolVersion: ProtocolVersion.v1_1,
         statusCode: self.statusCode,
