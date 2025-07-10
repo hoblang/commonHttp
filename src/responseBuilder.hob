@@ -18,7 +18,7 @@ public fun new(code: StatusCode) -> RequestBuilder {
     };
 }
 
-public fun RequestBuilder.header(&self, key: string, value: string) -> *RequestBuilder {
+public fun RequestBuilder.header(self, key: string, value: string) -> RequestBuilder {
     self.headers.push({
         name: key,
         value: value,
