@@ -2,6 +2,7 @@ import std;
 import io;
 import result;
 import list;
+import "common.hob" as common;
 
 use io.fd.Fd;
 use list.List;
@@ -12,13 +13,11 @@ public type Header = struct {
     public value: string,
 };
 
-public type ProtocolVersion = enum { v1_0, v1_1, v2_0, v3_0 };
-
 public type Request = struct {
     public method: string,
     public path: string,
     public query: string,
-    public protocolVersion: ProtocolVersion,
+    public protocolVersion: common.ProtocolVersion,
     public headers: List.<Header>,
 };
 

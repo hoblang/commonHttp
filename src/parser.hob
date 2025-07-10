@@ -3,12 +3,14 @@ import result;
 import std;
 import list;
 
+import "common.hob" as common;
 import "request.hob" as request;
 
 use request.Request;
 use result.NoneResult;
 use strings.String;
 use list.List;
+use common.ProtocolVersion;
 
 type State = enum {
     failed,
@@ -45,7 +47,7 @@ public type Data = struct {
         method: RelativeSlice,
         path: RelativeSlice,
         query: RelativeSlice,
-        protocolVersion: request.ProtocolVersion,
+        protocolVersion: ProtocolVersion,
     },
     headers: List.<RelHeader>,
 };
@@ -94,15 +96,15 @@ fun Parser.parseLine(&self, relLine: RelativeSlice) -> NoneResult {
         split = split[1].splitOnce(' ');
 
         final protocolVersionStr = split[1].trim();
-        var protocolVersion: request.ProtocolVersion;
+        var protocolVersion: ProtocolVersion;
         if protocolVersionStr.equals("HTTP/1.0") {
-            protocolVersion = request.ProtocolVersion.v1_0;
+            protocolVersion = ProtocolVersion.v1_0;
         } else if protocolVersionStr.equals("HTTP/1.1") {
-            protocolVersion = request.ProtocolVersion.v1_1;
+            protocolVersion = ProtocolVersion.v1_1;
         } else if protocolVersionStr.equals("HTTP/2.0") {
-            protocolVersion = request.ProtocolVersion.v2_0;
+            protocolVersion = ProtocolVersion.v2_0;
         } else if protocolVersionStr.equals("HTTP/3.0") {
-            protocolVersion = request.ProtocolVersion.v3_0;
+            protocolVersion = ProtocolVersion.v3_0;
         } else {
             return self.fail("invalid protocol version passed");
         }
