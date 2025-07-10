@@ -1,10 +1,11 @@
 import list;
+import optional;
 import mem;
 import "response.hob" as response;
 import "common.hob" as common;
 
 use list.List;
-use response.{ StatusCode, Response };
+use response.{ StatusCode, Response, Body };
 use common.{ ProtocolVersion, Header };
 
 public type RequestBuilder = struct {
@@ -33,5 +34,6 @@ public fun RequestBuilder.build(&self) -> Response {
         protocolVersion: ProtocolVersion.v1_1,
         statusCode: self.statusCode,
         headers: self.headers,
+        body: optional.none.<Body>(),
     };
 }

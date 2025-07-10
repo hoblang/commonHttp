@@ -1,4 +1,5 @@
 import std;
+import optional;
 import test;
 import list;
 import "../lib.hob" as commonHttp;
@@ -27,6 +28,7 @@ public fun tests() {
             headers: list.fromSlice.<commonHttp.common.Header>(
                 std.slice.new.<commonHttp.common.Header>(&headers[0], headers.length)
             ),
+            body: optional.none.<commonHttp.response.Body>(),
         });
         final head = sender.head();
         defer head.free();

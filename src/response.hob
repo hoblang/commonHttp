@@ -1,7 +1,11 @@
+import io;
+import mem;
+import optional;
 import list;
 import "common.hob" as common;
 
 use list.List;
+use optional.Optional;
 use common.{ ProtocolVersion, Header };
 
 public type StatusCode = enum {
@@ -74,8 +78,30 @@ public type StatusCode = enum {
     networkAuthenticationRequired,
 };
 
+public type Body = struct {
+    data: *void,
+    send: fun (io.fd.Fd, *void),
+    free: fun (*void),
+};
+
+public fun newBody<T>(data: T, send: fun (io.fd.Fd, *T), free: fun (*T)) -> Body {
+    return {
+        data: mem.allocateWith.<T>(data),
+        send: send,
+        free: free,
+    };
+}
+
 public type Response = struct {
     public protocolVersion: ProtocolVersion,
     public statusCode: StatusCode,
     public headers: List.<Header>,
+    public body: Optional.<Body>,
 };
+
+public fun Response.free(self) {
+    if !self.body.isEmpty {
+        self.body.value.free(self.body.value.data);
+    }
+    self.headers.free();
+}
