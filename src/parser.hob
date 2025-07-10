@@ -84,7 +84,7 @@ fun Parser.fail(&self, message: string) -> NoneResult {
 }
 
 fun Parser.parseLine(&self, relLine: RelativeSlice) -> NoneResult {
-    final line = self.real(relLine);
+    final line = self.real(relLine).trim();
 
     if self.state == State.firstLine {
         var split = line.splitOnce('\n');
