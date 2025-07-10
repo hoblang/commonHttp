@@ -1,0 +1,43 @@
+import std;
+import os;
+import "lib.hob" as http;
+
+fun putInParserBySamples(parser: *http.parser.Parser, data: string, sampleSize: usize) {
+    for i in std.range(DATA.length / sampleSize + 1) {
+        var end = (i + 1) * sampleSize;
+        if end > DATA.length {
+            end = DATA.length;
+        }
+        parser.put(DATA.subslice(i * sampleSize, end) as ?);
+    }
+}
+
+const DATA: string = "GET /hello/world?a=b&c=d HTTP/1.1
+Header1: value1
+Header2: value2
+
+";
+
+global fun main() -> i32 {
+    return os.mainWithoutArgs(fun () {
+        var parser = http.parser.new();
+        defer parser.free();
+        putInParserBySamples(&parser, DATA, 10);
+        std.panic.assert(parser.finished(), "request was not finished");
+
+        final request = parser.request();
+        defer request.free();
+
+        std.panic.assert(request.method.equals("GET"), "method missmatch");
+        std.panic.assert(request.path.equals("/hello/world"), "path missmatch");
+        std.panic.assert(request.query.equals("a=b&c=d"), "query missmatch");
+        std.panic.assert(request.protocolVersion == http.request.ProtocolVersion.v1_1, "protocol version missmatch");
+
+        std.panic.assert(request.headers.length() == 2, "headers length missmatch");
+        std.panic.assert(request.headers.at(0).name.equals("Header1"), "headers[0].name missmatch");
+        std.panic.assert(request.headers.at(0).value.equals("value1"), "headers[0].value missmatch");
+        std.panic.assert(request.headers.at(1).name.equals("Header2"), "headers[1].name missmatch");
+        std.panic.assert(request.headers.at(1).value.equals("value2"), "headers[1].value missmatch");
+        return 0;
+    });
+}

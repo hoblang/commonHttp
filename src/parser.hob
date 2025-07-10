@@ -1,0 +1,206 @@
+import strings;
+import result;
+import std;
+import list;
+
+import "request.hob" as request;
+
+use request.Request;
+use result.NoneResult;
+use strings.String;
+use list.List;
+
+type State = enum {
+    failed,
+    firstLine, headers,
+    finished,
+};
+
+type RelativeSlice = struct {
+    start: usize,
+    length: usize,
+};
+
+fun RelativeSlice.of(self, str: string) -> string {
+    return str.subslice(self.start, self.start + self.length);
+}
+
+fun takeRelTo(str: string, rel: string) -> RelativeSlice {
+    std.panic.assert(str.raw as usize <= rel.raw as usize, "rel is not an subslice");
+    final start = rel.raw as usize - str.raw as usize;
+    std.panic.assert(rel.length + start <= str.length, "rel is not an subslice");
+    return {
+        start: start,
+        length: rel.length,
+    };
+}
+
+public type RelHeader = struct {
+    name: RelativeSlice,
+    value: RelativeSlice,
+};
+
+public type Data = struct {
+    firstLine: struct {
+        method: RelativeSlice,
+        path: RelativeSlice,
+        query: RelativeSlice,
+        protocolVersion: request.ProtocolVersion,
+    },
+    headers: List.<RelHeader>,
+};
+
+public type Parser = struct {
+    buffer: String,
+    state: State,
+    position: usize,
+    newLines: usize,
+    data: Data,
+};
+
+public fun new() -> Parser {
+    return {
+        state: State.firstLine,
+        buffer: strings.new(),
+        position: 0,
+        newLines: 0,
+        data: undefined,
+    };
+}
+
+fun Parser.rel(&self, str: string) -> RelativeSlice {
+    return takeRelTo(self.buffer.toString(), str);
+}
+
+fun Parser.real(&self, slice: RelativeSlice) -> string {
+    return slice.of(self.buffer.toString());
+}
+
+fun Parser.fail(&self, message: string) -> NoneResult {
+    self.state = State.failed;
+    return result.noneErr(message);
+}
+
+fun Parser.parseLine(&self, relLine: RelativeSlice) -> NoneResult {
+    final line = self.real(relLine);
+
+    if self.state == State.firstLine {
+        var split = line.splitOnce('\n');
+        final reminder = split[1];
+
+        split = split[0].splitOnce(' ');
+        final method = split[0].trim();
+
+        split = split[1].splitOnce(' ');
+
+        final protocolVersionStr = split[1].trim();
+        var protocolVersion: request.ProtocolVersion;
+        if protocolVersionStr.equals("HTTP/1.0") {
+            protocolVersion = request.ProtocolVersion.v1_0;
+        } else if protocolVersionStr.equals("HTTP/1.1") {
+            protocolVersion = request.ProtocolVersion.v1_1;
+        } else if protocolVersionStr.equals("HTTP/2.0") {
+            protocolVersion = request.ProtocolVersion.v2_0;
+        } else if protocolVersionStr.equals("HTTP/3.0") {
+            protocolVersion = request.ProtocolVersion.v3_0;
+        } else {
+            return self.fail("invalid protocol version passed");
+        }
+
+        split = split[0].trim().splitOnce('?');
+        final path = split[0];
+        final query = split[1];
+
+        self.data.firstLine = {
+            method: self.rel(method),
+            path: self.rel(path),
+            query: self.rel(query),
+            protocolVersion: protocolVersion,
+        };
+        self.state = State.headers;
+        self.data.headers = list.new.<RelHeader>();
+    } else if self.state == State.headers {
+        if line.length == 0 {
+            self.state = State.finished;
+        } else {
+            var split = line.splitOnce(':');
+            final name = split[0].trim();
+            final value = split[1].trim();
+            self.data.headers.push({
+                name: self.rel(name),
+                value: self.rel(value),
+            });
+        }
+    }
+
+    return result.noneOk();
+}
+
+fun Parser.peek(&self) -> NoneResult {
+    if self.state == State.failed {
+        return result.noneErr("already failed");
+    }
+
+    while self.newLines > 0 {
+        final res = self.parseLine(self.takeNewLine());
+        if !res.isOk {
+            return res.convertErr.<std.None>();
+        }
+    }
+    
+    return result.noneOk();
+}
+
+fun Parser.addNewLines(&self, data: string) {
+    for i in std.range(data.length) {
+        if data.at(i) == '\n' {
+            self.newLines += 1;
+        }
+    }
+}
+
+fun Parser.takeNewLine(&self) -> RelativeSlice {
+    std.panic.assert(self.newLines > 0, "trying to take new line but there is no full lines");
+    final startPos = self.position;
+
+    while self.buffer.at(self.position) != '\n' {
+        self.position += 1;
+    }
+    self.newLines -= 1;
+    final endPos = self.position;
+    self.position += 1;
+
+    return {
+        start: startPos,
+        length: endPos - startPos
+    };
+}
+
+public fun Parser.free(&self) {
+    self.buffer.free();
+}
+
+public fun Parser.put(&self, data: string) -> NoneResult {
+    self.buffer.appendSlice(data);
+    self.addNewLines(data);    
+    return self.peek();
+}
+
+public fun Parser.finished(&self) -> bool {
+    return self.state == State.finished;
+}
+
+public fun Parser.request(&self) -> Request {
+    return {
+        method: self.real(self.data.firstLine.method),
+        path: self.real(self.data.firstLine.path),
+        query: self.real(self.data.firstLine.query),
+        protocolVersion: self.data.firstLine.protocolVersion,
+        headers: self.data.headers.mapWith.<*Parser, request.Header>(self, fun (self, header) {
+            return {
+                name: self.real(header.name),
+                value: self.real(header.value),
+            };
+        }),
+    };
+}
