@@ -1,0 +1,35 @@
+import list;
+import "response.hob" as response;
+import "common.hob" as common;
+
+use list.List;
+use response.{ StatusCode, Response };
+use common.{ ProtocolVersion, Header };
+
+public type RequestBuilder = struct {
+    statusCode: StatusCode,
+    headers: List.<Header>,
+};
+
+public fun new(code: StatusCode) -> RequestBuilder {
+    return {
+        statusCode: code,
+        headers: list.new.<Header>(),
+    };
+}
+
+public fun RequestBuilder.header(&self, key: string, value: string) -> *RequestBuilder {
+    self.headers.push({
+        name: key,
+        value: value,
+    });
+    return self;
+}
+
+public fun RequestBuilder.build(&self) -> Response {
+    return {
+        protocolVersion: ProtocolVersion.v1_1,
+        statusCode: self.statusCode,
+        headers: self.headers,
+    };
+}
