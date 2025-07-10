@@ -1,4 +1,5 @@
 import std;
+import io;
 import strings;
 import "common.hob" as common;
 import "response.hob" as response;
@@ -113,4 +114,10 @@ public fun Sender.head(&self) -> String {
     }
     result.appendSlice("\n");
     return result;
+}
+
+public fun Sender.sendBody(&self, fd: io.fd.Fd) {
+    if !self.response.body.isEmpty {
+        self.response.body.value.send(fd, self.response.body.value.data);
+    }
 }

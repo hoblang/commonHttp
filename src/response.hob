@@ -79,9 +79,9 @@ public type StatusCode = enum {
 };
 
 public type Body = struct {
-    data: *void,
-    send: fun (io.fd.Fd, *void),
-    free: fun (*void),
+    public data: *void,
+    public send: fun (io.fd.Fd, *void),
+    public free: fun (*void),
 };
 
 public fun newBody<T>(data: T, send: fun (io.fd.Fd, *T), free: fun (*T)) -> Body {

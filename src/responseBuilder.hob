@@ -28,6 +28,16 @@ public fun RequestBuilder.header(&self, key: string, value: string) -> *RequestB
     return self;
 }
 
+public fun RequestBuilder.body(&self, body: Body) -> Response {
+    defer mem.free(self);
+    return {
+        protocolVersion: ProtocolVersion.v1_1,
+        statusCode: self.statusCode,
+        headers: self.headers,
+        body: optional.some.<Body>(body),
+    };
+}
+
 public fun RequestBuilder.build(&self) -> Response {
     defer mem.free(self);
     return {
