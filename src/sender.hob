@@ -1,0 +1,116 @@
+import std;
+import strings;
+import "common.hob" as common;
+import "response.hob" as response;
+
+use strings.String;
+use common.ProtocolVersion;
+use response.{ StatusCode, Response };
+
+public type Sender = struct {
+    response: Response,
+};
+
+public fun new(response: Response) -> Sender {
+    return { response: response };
+}
+
+fun protocolVersionToString(version: ProtocolVersion) -> string {
+    if version == ProtocolVersion.v1_0 {
+        return "HTTP/1.0";
+    } else if version == ProtocolVersion.v1_1 {
+        return "HTTP/1.1";
+    } else if version == ProtocolVersion.v2_0 {
+        return "HTTP/2.0";
+    } else if version == ProtocolVersion.v3_0 {
+        return "HTTP/3.0";
+    } else {
+        std.panic.panic("unreachable");
+    }
+}
+
+fun statusCodeMessage(statusCode: StatusCode) -> string {
+    if statusCode == StatusCode.continueRequest { return "Continue"; }
+    else if statusCode == StatusCode.switchingProtocols { return "Switching Protocols"; }
+    else if statusCode == StatusCode.processingDeprecated { return "Processing Deprecated"; }
+    else if statusCode == StatusCode.earlyHints { return "Early Hints"; }
+    else if statusCode == StatusCode.ok { return "OK"; }
+    else if statusCode == StatusCode.created { return "Created"; }
+    else if statusCode == StatusCode.accepted { return "Accepted"; }
+    else if statusCode == StatusCode.nonAuthoritativeInformation { return "Non-Authoritative Information"; }
+    else if statusCode == StatusCode.noContent { return "No Content"; }
+    else if statusCode == StatusCode.resetContent { return "Reset Content"; }
+    else if statusCode == StatusCode.partialContent { return "Partial Content"; }
+    else if statusCode == StatusCode.multiStatus { return "Multi-Status (WebDAV)"; }
+    else if statusCode == StatusCode.alreadyReported { return "Already Reported (WebDAV)"; }
+    else if statusCode == StatusCode.imUsed { return "IM Used (HTTP Delta encoding)"; }
+    else if statusCode == StatusCode.multipleChoices  { return "Multiple Choices"; }
+    else if statusCode == StatusCode.movedPermanently { return "Moved Permanently"; }
+    else if statusCode == StatusCode.found { return "Found"; }
+    else if statusCode == StatusCode.seeOther { return "See Other"; }
+    else if statusCode == StatusCode.notModified { return "Not Modified"; }
+    else if statusCode == StatusCode.useProxyDeprecated { return "Use Proxy Deprecated"; }
+    else if statusCode == StatusCode._reserved { return "unused"; }
+    else if statusCode == StatusCode.temporaryRedirect { return "Temporary Redirect"; }
+    else if statusCode == StatusCode.permanentRedirect { return "Permanent Redirect"; }
+    else if statusCode == StatusCode.badRequest  { return "Bad Request"; }
+    else if statusCode == StatusCode.unauthorized { return "Unauthorized"; }
+    else if statusCode == StatusCode.paymentRequired { return "Payment Required"; }
+    else if statusCode == StatusCode.forbidden { return "Forbidden"; }
+    else if statusCode == StatusCode.notFound { return "Not Found"; }
+    else if statusCode == StatusCode.methodNotAllowed { return "Method Not Allowed"; }
+    else if statusCode == StatusCode.notAcceptable { return "Not Acceptable"; }
+    else if statusCode == StatusCode.proxyAuthenticationRequired { return "Proxy Authentication Required"; }
+    else if statusCode == StatusCode.requestTimeout { return "Request Timeout"; }
+    else if statusCode == StatusCode.conflict { return "Conflict"; }
+    else if statusCode == StatusCode.gone { return "Gone"; }
+    else if statusCode == StatusCode.lengthRequired { return "Length Required"; }
+    else if statusCode == StatusCode.preconditionFailed { return "Precondition Failed"; }
+    else if statusCode == StatusCode.contentTooLarge { return "Content Too Large"; }
+    else if statusCode == StatusCode.uriTooLong { return "URI Too Long"; }
+    else if statusCode == StatusCode.unsupportedMediaType { return "Unsupported Media Type"; }
+    else if statusCode == StatusCode.rangeNotSatisfiable { return "Range Not Satisfiable"; }
+    else if statusCode == StatusCode.expectationFailed { return "Expectation Failed"; }
+    else if statusCode == StatusCode.imATeapot { return "I'm a teapot"; }
+    else if statusCode == StatusCode.misdirectedRequest { return "Misdirected Request"; }
+    else if statusCode == StatusCode.unprocessableContent { return "Unprocessable Content (WebDAV)"; }
+    else if statusCode == StatusCode.locked { return "Locked (WebDAV)"; }
+    else if statusCode == StatusCode.failedDependency { return "Failed Dependency (WebDAV)"; }
+    else if statusCode == StatusCode.tooEarlyExperimental { return "Too Early Experimental"; }
+    else if statusCode == StatusCode.upgradeRequired { return "Upgrade Required"; }
+    else if statusCode == StatusCode.preconditionRequired { return "Precondition Required"; }
+    else if statusCode == StatusCode.tooManyRequests { return "Too Many Requests"; }
+    else if statusCode == StatusCode.requestHeaderFieldsTooLarge { return "Request Header Fields Too Large"; }
+    else if statusCode == StatusCode.unavailableForLegalReasons { return "Unavailable For Legal Reasons"; }
+    else if statusCode == StatusCode.internalServerError  { return "Internal Server Error"; }
+    else if statusCode == StatusCode.notImplemented { return "Not Implemented"; }
+    else if statusCode == StatusCode.badGateway { return "Bad Gateway"; }
+    else if statusCode == StatusCode.serviceUnavailable { return "Service Unavailable"; }
+    else if statusCode == StatusCode.gatewayTimeout { return "Gateway Timeout"; }
+    else if statusCode == StatusCode.httpVersionNotSupported { return "HTTP Version Not Supported"; }
+    else if statusCode == StatusCode.variantAlsoNegotiates { return "Variant Also Negotiates"; }
+    else if statusCode == StatusCode.insufficientStorage { return "Insufficient Storage (WebDAV)"; }
+    else if statusCode == StatusCode.loopDetected { return "Loop Detected (WebDAV)"; }
+    else if statusCode == StatusCode.notExtended { return "Not Extended"; }
+    else if statusCode == StatusCode.networkAuthenticationRequired { return "Network Authentication Required"; }
+    else { std.panic.panic("unreachable"); }
+}
+
+public fun Sender.head(&self) -> String {
+    var result = strings.new();
+    result.appendSlice(protocolVersionToString(self.response.protocolVersion));
+    result.appendSlice(" ");
+    result.appendInt32(self.response.statusCode as ?);
+    result.appendSlice(" ");
+    result.appendSlice(statusCodeMessage(self.response.statusCode));
+    result.appendSlice("\n");
+    for i in std.range(self.response.headers.length()) {
+        final header = self.response.headers.at(i);
+        result.appendSlice(header.name);
+        result.appendSlice(": ");
+        result.appendSlice(header.value);
+        result.appendSlice("\n");
+    }
+    result.appendSlice("\n");
+    return result;
+}

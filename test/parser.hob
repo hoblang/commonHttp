@@ -1,8 +1,8 @@
 import std;
 import test;
-import "../lib.hob" as http;
+import "../lib.hob" as commonHttp;
 
-fun putInParserBySamples(parser: *http.parser.Parser, data: string, sampleSize: usize) {
+fun putInParserBySamples(parser: *commonHttp.parser.Parser, data: string, sampleSize: usize) {
     for i in std.range(DATA.length / sampleSize + 1) {
         var end = (i + 1) * sampleSize;
         if end > DATA.length {
@@ -18,9 +18,9 @@ Header2: value2
 
 ";
 
-public fun tests() -> void {
+public fun tests() {
     test.case("sampled request", fun () {
-        var parser = http.parser.new();
+        var parser = commonHttp.parser.new();
         defer parser.free();
         putInParserBySamples(&parser, DATA, 10);
         std.panic.assert(parser.finished(), "request was not finished");
@@ -31,7 +31,7 @@ public fun tests() -> void {
         std.panic.assert(request.method.equals("GET"), "method missmatch");
         std.panic.assert(request.path.equals("/hello/world"), "path missmatch");
         std.panic.assert(request.query.equals("a=b&c=d"), "query missmatch");
-        std.panic.assert(request.protocolVersion == http.common.ProtocolVersion.v1_1, "protocol version missmatch");
+        std.panic.assert(request.protocolVersion == commonHttp.common.ProtocolVersion.v1_1, "protocol version missmatch");
 
         std.panic.assert(request.headers.length() == 2, "headers length missmatch");
         std.panic.assert(request.headers.at(0).name.equals("Header1"), "headers[0].name missmatch");

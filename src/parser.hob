@@ -10,7 +10,7 @@ use request.Request;
 use result.NoneResult;
 use strings.String;
 use list.List;
-use common.ProtocolVersion;
+use common.{ ProtocolVersion, Header };
 
 type State = enum {
     failed,
@@ -198,7 +198,7 @@ public fun Parser.request(&self) -> Request {
         path: self.real(self.data.firstLine.path),
         query: self.real(self.data.firstLine.query),
         protocolVersion: self.data.firstLine.protocolVersion,
-        headers: self.data.headers.mapWith.<*Parser, request.Header>(self, fun (self, header) {
+        headers: self.data.headers.mapWith.<*Parser, Header>(self, fun (self, header) {
             return {
                 name: self.real(header.name),
                 value: self.real(header.value),

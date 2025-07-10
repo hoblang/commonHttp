@@ -7,17 +7,13 @@ import "common.hob" as common;
 use io.fd.Fd;
 use list.List;
 use result.{ NoneResult, Result };
-
-public type Header = struct {
-    public name: string,
-    public value: string,
-};
+use common.{ ProtocolVersion, Header };
 
 public type Request = struct {
     public method: string,
     public path: string,
     public query: string,
-    public protocolVersion: common.ProtocolVersion,
+    public protocolVersion: ProtocolVersion,
     public headers: List.<Header>,
 };
 

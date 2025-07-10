@@ -1,2 +1,7 @@
 public type ProtocolVersion = enum { v1_0, v1_1, v2_0, v3_0 };
 
+public type Header = struct {
+    public name: string,
+    public value: string,
+};
+

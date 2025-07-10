@@ -1,0 +1,81 @@
+import list;
+import "common.hob" as common;
+
+use list.List;
+use common.{ ProtocolVersion, Header };
+
+public type StatusCode = enum {
+    continueRequest = 100,
+    switchingProtocols,
+    processingDeprecated,
+    earlyHints,
+
+    ok = 200,
+    created,
+    accepted,
+    nonAuthoritativeInformation,
+    noContent,
+    resetContent,
+    partialContent,
+    multiStatus,
+    alreadyReported,
+    imUsed,
+
+    multipleChoices = 300,
+    movedPermanently,
+    found,
+    seeOther,
+    notModified,
+    useProxyDeprecated,
+    _reserved,
+    temporaryRedirect,
+    permanentRedirect,
+
+    badRequest = 400,
+    unauthorized,
+    paymentRequired,
+    forbidden,
+    notFound,
+    methodNotAllowed,
+    notAcceptable,
+    proxyAuthenticationRequired,
+    requestTimeout,
+    conflict,
+    gone,
+    lengthRequired,
+    preconditionFailed,
+    contentTooLarge,
+    uriTooLong,
+    unsupportedMediaType,
+    rangeNotSatisfiable,
+    expectationFailed,
+    imATeapot,
+    misdirectedRequest,
+    unprocessableContent,
+    locked,
+    failedDependency,
+    tooEarlyExperimental,
+    upgradeRequired,
+    preconditionRequired,
+    tooManyRequests,
+    requestHeaderFieldsTooLarge,
+    unavailableForLegalReasons,
+
+    internalServerError = 500,
+    notImplemented,
+    badGateway,
+    serviceUnavailable,
+    gatewayTimeout,
+    httpVersionNotSupported,
+    variantAlsoNegotiates,
+    insufficientStorage,
+    loopDetected,
+    notExtended,
+    networkAuthenticationRequired,
+};
+
+public type Response = struct {
+    public protocolVersion: ProtocolVersion,
+    public statusCode: StatusCode,
+    public headers: List.<Header>,
+};

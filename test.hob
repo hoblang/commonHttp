@@ -1,9 +1,11 @@
 import os;
 import "test/parser.hob" as parser;
+import "test/sender.hob" as sender;
 
 global fun main() -> i32 {
     return os.mainWithoutArgs(fun () {
         parser.tests();
+        sender.tests();
         return 0;
     });
 }

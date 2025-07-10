@@ -1,0 +1,36 @@
+import std;
+import test;
+import list;
+import "../lib.hob" as commonHttp;
+
+const DATA: string = "HTTP/1.1 200 OK
+Header1: value1
+Header2: value2
+
+";
+
+public fun tests() {
+    test.case("allocate request", fun () {
+        var headers = <commonHttp.common.Header>[
+            {
+                name: "Header1",
+                value: "value1",
+            },
+            {
+                name: "Header2",
+                value: "value2",
+            },
+        ];
+        var sender = commonHttp.sender.new({
+            statusCode: commonHttp.response.StatusCode.ok,
+            protocolVersion: commonHttp.common.ProtocolVersion.v1_1,
+            headers: list.fromSlice.<commonHttp.common.Header>(
+                std.slice.new.<commonHttp.common.Header>(&headers[0], headers.length)
+            ),
+        });
+        final head = sender.head();
+        defer head.free();
+        std.panic.assert(head.toString().equals(DATA), "invalid body allocated");
+        return true;
+    });
+}
